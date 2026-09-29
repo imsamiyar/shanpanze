@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>بردب — نصب خودکار روی کلادفلر</title>
+<style>
+  :root { --bg:#0b0616; --card:#160c2a; --line:#2a1c4a; --acc:#a855f7; --ok:#34d399; --err:#f87171; --txt:#ede9fe; --mut:#9b8ec4; }
+  * { box-sizing:border-box; margin:0; font-family:'Vazirmatn',Tahoma,sans-serif; }
+  body { background:var(--bg); color:var(--txt); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:28px; max-width:520px; width:100%; }
+  h1 { font-size:22px; margin-bottom:6px; } .sub { color:var(--mut); font-size:13px; margin-bottom:22px; line-height:1.9; }
+  label { display:block; font-size:12px; color:var(--mut); margin:14px 0 6px; }
+  input { width:100%; background:#0f0820; border:1px solid var(--line); border-radius:12px; padding:12px 14px; color:var(--txt); font-size:14px; direction:ltr; text-align:left; }
+  input:focus { outline:none; border-color:var(--acc); }
+  button { width:100%; margin-top:20px; background:linear-gradient(135deg,#a855f7,#7c3aed); border:0; border-radius:14px; padding:14px; color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:wait; }
+  .log { margin-top:18px; background:#0f0820; border:1px solid var(--line); border-radius:12px; padding:12px; font-size:12px; direction:ltr; text-align:left; max-height:220px; overflow:auto; display:none; font-family:monospace; line-height:1.8; }
+  .log .ok { color:var(--ok); } .log .err { color:var(--err); }
+  .result { display:none; margin-top:16px; background:rgba(52,211,153,.08); border:1px solid rgba(52,211,153,.3); border-radius:12px; padding:14px; font-size:13px; line-height:2; }
+  .result a { color:var(--ok); direction:ltr; display:inline-block; word-break:break-all; }
+  .note { font-size:11px; color:var(--mut); margin-top:14px; line-height:1.9; }
+  ol { padding-right:18px; font-size:12px; color:var(--mut); line-height:2.2; margin-top:8px; }
+  a.help { color:var(--acc); }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🐆 نصب خودکار Brebde</h1>
+  <p class="sub">بدون GitHub — ورکر + KV + کرون همه‌چیز یک‌جا ساخته می‌شود. فقط یک توکن کلادفلر می‌خواهد.</p>
+
+  <ol>
+    <li>به <a class="help" href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">dash.cloudflare.com/profile/api-tokens</a> برو</li>
+    <li><b>Create Token</b> → قالب <b>Edit Cloudflare Workers</b> → Continue → Create</li>
+    <li>توکن را کپی و اینجا بچسبان</li>
+  </ol>
+
+  <label>Cloudflare API Token</label>
+  <input id="token" type="password" placeholder="eyJhbGciOi..." autocomplete="off">
+
+  <label>نام ورکر (اختیاری)</label>
+  <input id="wname" type="text" placeholder="brebde" value="brebde" autocomplete="off">
+
+  <button id="go" onclick="deploy()">🚀 نصب کن</button>
+  <div class="log" id="log"></div>
+  <div class="result" id="result"></div>
+  <p class="note">🔒 توکن فقط در مرورگر شما به API کلادفلر ارسال می‌شود و هیچ‌جای دیگری ذخیره نمی‌شود. بعد از نصب می‌توانید همان لحظه توکن را از داشبورد حذف کنید.</p>
+</div>
+<script>
+const WORKER_CODE_URL = 'https://raw.githubusercontent.com/imsamiyar/brebde/main/catclient.worker.js';
+
+function log(msg, cls) {
+  const el = document.getElementById('log');
+  el.style.display = 'block';
+  el.innerHTML += '<div class="' + (cls || '') + '">' + msg + '</div>';
+  el.scrollTop = el.scrollHeight;
+}
+
+async function api(token, method, path, body) {
+  const res = await fetch('https://api.cloudflare.com/client/v4' + path, {
+    method,
+    headers: Object.assign({ Authorization: 'Bearer ' + token }, body ? { 'Content-Type': 'application/json' } : {}),
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.success === false) {
+    const err = (data.errors && data.errors[0]) || {};
+    throw new Error(err.message || ('HTTP ' + res.status));
+  }
+  return data.result;
+}
+
+async function deploy() {
+  const btn = document.getElementById('go');
+  const token = document.getElementById('token').value.trim();
+  const name = (document.getElementById('wname').value.trim() || 'brebde').toLowerCase().replace(/[^a-z0-9-]/g, '');
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('result').style.display = 'none';
+  if (!token) return alert('توکن را وارد کن');
+  btn.disabled = true;
+  try {
+    log('→ گرفتن اکانت...');
+    const accounts = await api(token, 'GET', '/accounts');
+    const acc = accounts[0];
+    log('✓ اکانت: ' + acc.name, 'ok');
+
+    log('→ ساخت KV...');
+    const nss = await api(token, 'GET', '/accounts/' + acc.id + '/storage/kv/namespaces');
+    let ns = nss.find(n => n.title === name + '-kv');
+    if (!ns) {
+      ns = await api(token, 'POST', '/accounts/' + acc.id + '/storage/kv/namespaces', { title: name + '-kv' });
+      log('✓ KV ساخته شد', 'ok');
+    } else { log('✓ KV از قبل موجود — استفاده مجدد', 'ok'); }
+
+    log('→ دانلود کد ورکر (آخرین نسخه از GitHub)...');
+    const codeRes = await fetch(WORKER_CODE_URL, { cache: 'no-store' });
+    if (!codeRes.ok) throw new Error('دانلود کد ناموفق: HTTP ' + codeRes.status);
+    const code = await codeRes.text();
+    log('✓ کد دریافت شد (' + Math.round(code.length / 1024) + 'KB)', 'ok');
+
+    log('→ آپلود ورکر...');
+    const meta = {
+      main_module: 'worker.js',
+      compatibility_date: '2026-09-01',
+      bindings: [
+        { type: 'kv_namespace', name: 'CAT_KV', namespace_id: ns.id },
+        { type: 'plain_text', name: 'OPEN_PANEL', text: 'true' },
+        { type: 'plain_text', name: 'OPEN_SUB', text: 'true' },
+      ],
+    };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+    form.append('worker.js', new Blob([code], { type: 'application/javascript+module' }), 'worker.js');
+    const put = await fetch('https://api.cloudflare.com/client/v4/accounts/' + acc.id + '/workers/scripts/' + name, {
+      method: 'PUT', headers: { Authorization: 'Bearer ' + token }, body: form,
+    });
+    const putData = await put.json().catch(() => ({}));
+    if (!put.ok || putData.success === false) {
+      const err = (putData.errors && putData.errors[0]) || {};
+      throw new Error('آپلود ورکر: ' + (err.message || ('HTTP ' + put.status)));
+    }
+    log('✓ ورکر آپلود شد', 'ok');
+
+    log('→ تنظیم کرون (هر ۶ ساعت)...');
+    await api(token, 'PUT', '/accounts/' + acc.id + '/workers/scripts/' + name + '/schedules', [[{ cron: '0 */6 * * *' }]]);
+    log('✓ کرون فعال', 'ok');
+
+    let url = 'https://' + name + '.workers.dev';
+    try {
+      const sub = await api(token, 'GET', '/accounts/' + acc.id + '/workers/subdomain');
+      await api(token, 'POST', '/accounts/' + acc.id + '/workers/scripts/' + name + '/subdomain', { enabled: true, previews_enabled: false });
+      url = 'https://' + name + '.' + sub.subdomain + '.workers.dev';
+    } catch (e) { log('⚠ workers.dev: ' + e.message); }
+
+    log('🎉 تمام شد', 'ok');
+    const r = document.getElementById('result');
+    r.innerHTML = '✅ پنل نصب شد! آدرس:<br><a href="' + url + '" target="_blank">' + url + '</a><br><small>اولین کار: از Tools یک پسورد پنل بذار.</small>';
+    r.style.display = 'block';
+  } catch (e) {
+    log('✗ خطا: ' + e.message, 'err');
+    alert('خطا: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
