@@ -1,22 +1,22 @@
 <resources>
-    <string name="widget_description">Connect or disconnect Cat Client from your home screen</string>
+    <string name="widget_description">Connect or disconnect Brebde from your home screen</string>
     <string name="widget_connect">Connect</string>
     <string name="widget_disconnected">Not connected</string>
-    <string name="widget_open_app">Open Cat Client</string>
-    <string name="app_name">Cat Client</string>
+    <string name="widget_open_app">Open Brebde</string>
+    <string name="app_name">Brebde</string>
     <string name="notification_channel_vpn">VPN connection</string>
-    <string name="notification_title">Cat Client</string>
+    <string name="notification_title">Brebde</string>
     <string name="notification_starting">Connecting</string>
     <string name="notification_connected">Connected</string>
     <string name="notification_connected_public">Connected using public servers</string>
     <string name="notification_connected_traffic">%1$s · ↓ %2$s · ↑ %3$s</string>
     <string name="notification_action_disconnect">Disconnect</string>
     <string name="notification_action_reconnect">Reconnect</string>
-    <string name="footer_copyright">Copyright Cat Client</string>
+    <string name="footer_copyright">Copyright Brebde</string>
     <string name="footer_url">https://t.me/catclient</string>
-    <string name="footer_telegram_content_description">Open Cat Client on Telegram</string>
+    <string name="footer_telegram_content_description">Open Brebde on Telegram</string>
     <string name="privacy_policy_title">Privacy policy</string>
-    <string name="privacy_policy_message">Cat Client is a free VPN service that routes your device traffic through VPN servers when connected.\n\n- We do not ask for account details in this app.\n- The app may process technical connection information needed to provide the VPN, such as connection status, traffic usage, diagnostics, and service errors.\n- The app stores usage counters locally on your device.\n- Third-party network providers may process connection metadata required to deliver internet traffic.\n- You are responsible for how you use this service. Any illegal activity performed through the service is not the responsibility of Cat Client.\n- Do not use the service for unlawful activity. Service availability, speed, and privacy protections are provided without warranty.</string>
+    <string name="privacy_policy_message">Brebde is a free VPN service that routes your device traffic through VPN servers when connected.\n\n- We do not ask for account details in this app.\n- The app may process technical connection information needed to provide the VPN, such as connection status, traffic usage, diagnostics, and service errors.\n- The app stores usage counters locally on your device.\n- Third-party network providers may process connection metadata required to deliver internet traffic.\n- You are responsible for how you use this service. Any illegal activity performed through the service is not the responsibility of Brebde.\n- Do not use the service for unlawful activity. Service availability, speed, and privacy protections are provided without warranty.</string>
     <string name="privacy_policy_checkbox">I have read and agree</string>
     <string name="privacy_policy_accept">Accept</string>
     <string name="privacy_policy_not_now">Not now</string>
@@ -41,7 +41,7 @@
     <string name="language_persian">فارسی</string>
     <string name="language_section">Language</string>
     <string name="language_setting_title">App language</string>
-    <string name="language_setting_detail">Choose the language used throughout Cat Client.</string>
+    <string name="language_setting_detail">Choose the language used throughout Brebde.</string>
     <string name="theme_dialog_title">Theme</string>
     <string name="theme_system">System default</string>
     <string name="theme_light">Light</string>
@@ -59,8 +59,8 @@
     <string name="subscription_from_clipboard">From Clipboard</string>
     <string name="subscription_clipboard_empty">The clipboard does not contain a subscription or configuration.</string>
     <string name="subscription_builtin_detail">Built-in · %1$s</string>
-    <string name="subscription_private_name">Cat Client Private</string>
-    <string name="subscription_public_name">Cat Client Public fallback</string>
+    <string name="subscription_private_name">Brebde Private</string>
+    <string name="subscription_public_name">Brebde Public fallback</string>
     <string name="subscription_usage_traffic">Used %1$s of %2$s (%3$d%%)</string>
     <string name="subscription_usage_used_only">Used %1$s</string>
     <string name="subscription_usage_expiry">%1$d days left</string>
@@ -141,7 +141,7 @@
 
     <string name="version_label">Version %1$s</string>
     <string name="update_available_title">Update available</string>
-    <string name="update_available_message">Cat Client %1$s is available on GitHub.</string>
+    <string name="update_available_message">Brebde %1$s is available on GitHub.</string>
     <string name="update_view_release">View release</string>
     <string name="update_settings_title">App updates</string>
     <string name="update_badge">New</string>
@@ -164,7 +164,7 @@
     <string name="update_cancel_download">Cancel download</string>
     <string name="update_retry">Retry download</string>
     <string name="update_install">Install update</string>
-    <string name="update_permission_denied">Allow Cat Client to install updates in Android settings, then tap Install update.</string>
+    <string name="update_permission_denied">Allow Brebde to install updates in Android settings, then tap Install update.</string>
     <string name="update_install_failed">Could not open the update installer. Check Android installation settings and try again.</string>
     <string name="output_automatic">🌐  Automatic output</string>
     <string name="metric_connection_time">Connection time</string>
@@ -233,7 +233,7 @@
     <string name="location_content_description">Location: %1$s</string>
 
     <string name="settings_title">Settings</string>
-    <string name="settings_categories_description">Choose a category to configure Cat Client.</string>
+    <string name="settings_categories_description">Choose a category to configure Brebde.</string>
     <string name="settings_category_app_preferences">App preferences</string>
     <string name="settings_category_app_preferences_detail">Subscription, appearance, and language.</string>
     <string name="settings_subscription_title">Subscription</string>
@@ -270,7 +270,7 @@
     <string name="tls_integrity_title">TLS integrity</string>
     <string name="tls_integrity_description">Checks secure sites and blocks routes with invalid certificates.</string>
     <string name="tls_fragment_title">TLS Fragment (ByeDPI)</string>
-    <string name="tls_fragment_description">Splits the TLS ClientHello so filters cannot read the SNI — the Cat Client Fragment mode for filtered workers.dev domains. Turn off if connections get slower.</string>
+    <string name="tls_fragment_description">Splits the TLS ClientHello so filters cannot read the SNI — the Brebde Fragment mode for filtered workers.dev domains. Turn off if connections get slower.</string>
     <string name="tls_fragment_enabled_toast">TLS Fragment on — reconnecting</string>
     <string name="dpi_preset_section">Fragment preset by operator</string>
     <string name="dpi_preset_applied">Preset %1$s saved — reconnect to apply</string>
@@ -347,7 +347,7 @@
     <string name="connection_mode_local_ip" translatable="false">IP: %1$s</string>
     <string name="connection_mode_local_endpoint" translatable="false">IP: %1$s · Port: %2$s</string>
     <string name="lan_sharing_title">Share VPN on LAN</string>
-    <string name="lan_sharing_description">Let other devices use Cat Client through an HTTP or SOCKS5 proxy.</string>
+    <string name="lan_sharing_description">Let other devices use Brebde through an HTTP or SOCKS5 proxy.</string>
     <string name="lan_sharing_require_password">Require password</string>
     <string name="lan_sharing_require_password_description">Protect access with the generated username and password.</string>
     <string name="lan_sharing_manual_setup">Configure the proxy manually on each client. Wi-Fi client isolation and apps that ignore proxy settings may prevent access.</string>
@@ -462,11 +462,11 @@
     <string name="connection_chain_error_shared_proxy">Connection and After share an underlying proxy and can’t be chained. Choose a different one.</string>
     <string name="connection_chain_error_udp">After needs UDP, but Connection supports TCP only. Choose a UDP-capable Connection.</string>
 
-    <string name="diagnostics_empty">The Cat Client diagnostics log is empty.</string>
+    <string name="diagnostics_empty">The Brebde diagnostics log is empty.</string>
     <string name="diagnostics_copied">Diagnostics copied.</string>
     <string name="chevron_forward">›</string>
 
-    <!-- Cat Client feature strings -->
+    <!-- Brebde feature strings -->
     <string name="tab_free">Free</string>
     <string name="tab_scanner">Scanner</string>
     <string name="tab_cloud">Cloud</string>
@@ -516,7 +516,7 @@
     <string name="free_add_all">Import all</string>
 
     <string name="cf_title">Deploy Cloudflare Worker</string>
-    <string name="cf_intro">Paste a Cloudflare API token (Workers Edit permission). Cat Client will create your private panel worker and add its subscription automatically.</string>
+    <string name="cf_intro">Paste a Cloudflare API token (Workers Edit permission). Brebde will create your private panel worker and add its subscription automatically.</string>
     <string name="cf_howto_title">How to create a token</string>
     <string name="cf_howto_body">1. Open dash.cloudflare.com → My Profile → API Tokens\n2. Create Token → \"Edit Cloudflare Workers\"\n3. Continue → Create Token → copy the token\n4. Paste it here and tap Deploy.</string>
     <string name="cf_token_hint">Cloudflare API Token</string>
@@ -599,7 +599,7 @@
     <string name="cloud_deploying">Deploying %1$s …</string>
     <string name="cloud_deployed">✓ Deployed!</string>
     <string name="cloud_sub_label">Subscription link</string>
-    <string name="cloud_sub_copied">Subscription copied to clipboard. Cat Client will now open Subscriptions.</string>
+    <string name="cloud_sub_copied">Subscription copied to clipboard. Brebde will now open Subscriptions.</string>
     <string name="cloud_add_sub">+ Add to subscriptions</string>
     <string name="cloud_worker_url">Worker URL</string>
     <string name="cloud_builtin_label">Built-in</string>
@@ -709,7 +709,7 @@
     <string name="cloud_wizard_share_hint">Share this link. Each visitor installs their own panel with their own token; the token is never stored.</string>
 
     <!-- Diagnostics and update safety -->
-    <string name="update_security_note">Official Cat Client release only · SHA-256, package, ABI and signing certificate are verified before installation.</string>
+    <string name="update_security_note">Official Brebde release only · SHA-256, package, ABI and signing certificate are verified before installation.</string>
     <string name="diagnostics_section">Diagnostics &amp; support</string>
     <string name="diagnostics_description">Keeps a short local startup and connection diary. Secrets are redacted before copying or sharing.</string>
     <string name="diagnostics_copy">Copy diagnostic report</string>

@@ -418,13 +418,13 @@ class MainActivity : Activity() {
 
     /**
      * Deep links from the Cat Panel web UI:
-     *   catclient://add-sub?url=<subscription or share links>&name=<optional>
-     *   catclient://scan?sni=<panel host>            → opens the IP scanner tab
-     *   catclient://scan?sni=…&ip=<clean ip,ip,…>    → opens and applies clean IPs
+     *   brebde://add-sub?url=<subscription or share links>&name=<optional>
+     *   brebde://scan?sni=<panel host>            → opens the IP scanner tab
+     *   brebde://scan?sni=…&ip=<clean ip,ip,…>    → opens and applies clean IPs
      */
     private fun handleCatClientDeepLink(intent: Intent?) {
         val data = intent?.data ?: return
-        if (data.scheme != "catclient") return
+        if (data.scheme != "brebde" && data.scheme != "catclient") return
         when (data.host) {
             "add-sub" -> {
                 val source = data.getQueryParameter("url")?.trim().orEmpty()
@@ -2592,7 +2592,7 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
             setPadding(dp(9), dp(4), dp(9), dp(4))
             addView(TextView(this@MainActivity).apply {
-                text = "Cat Client"
+                text = "Brebde"
                 textSize = 14.5f
                 typeface = CatClientDisplayTypeface
                 setTextColor(TEXT_PRIMARY)
@@ -6750,7 +6750,7 @@ class MainActivity : Activity() {
 
     /**
      * Copies the official one-click Deploy-to-Cloudflare link and opens the
-     * system share sheet — the recipient needs neither Cat Client nor an API
+     * system share sheet — the recipient needs neither Brebde nor an API
      * token, just a (free) Cloudflare account.
      */
     private fun shareDeployButtonLink() {
@@ -10000,7 +10000,7 @@ class MainActivity : Activity() {
         val settings = lanSharingPreferenceStore.read()
         val value = lanSharingDetails(settings)
         getSystemService(ClipboardManager::class.java)
-            .setPrimaryClip(ClipData.newPlainText("Cat Client LAN proxy", value))
+            .setPrimaryClip(ClipData.newPlainText("Brebde LAN proxy", value))
         Toast.makeText(this, R.string.lan_sharing_copied, Toast.LENGTH_SHORT).show()
     }
 
@@ -10938,7 +10938,7 @@ class MainActivity : Activity() {
     private fun copyDiagnosticsToClipboard() {
         val diagnostics = DiagnosticLogger.read(this).ifBlank { getString(R.string.diagnostics_empty) }
         val clipboard = getSystemService(ClipboardManager::class.java)
-        val clip = ClipData.newPlainText("Cat Client diagnostics", diagnostics).apply {
+        val clip = ClipData.newPlainText("Brebde diagnostics", diagnostics).apply {
             // Keeps the clipboard preview toast from rendering the log on screen (Android 13+).
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 description.extras = PersistableBundle().apply {

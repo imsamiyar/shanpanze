@@ -17,14 +17,14 @@
  *  - Panel (this page): Persian/English, dark "purple night" or light theme,
  *    offline QR codes, in-browser Cloudflare clean-IP scanner, encrypted-DNS
  *    (DoH) resolver with live upstream latency, per-IP config builder and a
- *    one-tap "Open in Cat Client" deep link.
+ *    one-tap "Open in Brebde" deep link.
  *  - DoH server: /dns-query (GET ?dns= base64url and POST application/dns-message).
  *
  * HOW TO USE
  *  1. Cloudflare Dashboard → Workers & Pages → Create Worker → edit code →
  *     paste THIS whole file → Deploy.
  *  2. Open https://<your-worker>.<your-subdomain>.workers.dev — that is the panel.
- *  3. Copy the subscription link into Cat Client (or any VLESS/Trojan client).
+ *  3. Copy the subscription link into Brebde (or any VLESS/Trojan client).
  *
  * ENVIRONMENT VARIABLES (Workers → Settings → Variables & Secrets, all optional)
  *  UUID           Stable UUID used in links (auto-derived from the host when empty)
@@ -42,7 +42,7 @@
  *  USER_TOTAL     subscription-userinfo total bytes (default 1 TiB)
  *  DNS_UPSTREAM   Upstream DoH resolver used by /dns-query
  *                 (default https://cloudflare-dns.com/dns-query)
- *  PANEL_TITLE    Header title shown in the panel (default "Cat Panel")
+ *  PANEL_TITLE    Header title shown in the panel (default "Brebde Panel")
  *
  * SNI + CLEAN IP
  *  Clients may connect to ANY Cloudflare edge IP while keeping the panel
@@ -51,7 +51,7 @@
  *  makes clean-IP fronting safe.
  */
 
-const CAT_PANEL_VERSION = '5.23.13';
+const CAT_PANEL_VERSION = '5.23.13'; // Brebde edition
 /* ipwho.is lookups for /api/geo — cached 10 min so the dashboard's 45s
  * refresh never trips the free-tier rate limit. */
 const GEO_CACHE = new Map();
@@ -85,7 +85,7 @@ const CF_TOKEN_TEMPLATE_URL = 'https://dash.cloudflare.com/profile/api-tokens?pe
     { key: 'account_settings', type: 'read' },
     { key: 'user_details', type: 'read' },
   ])) + '&accountId=*&zoneId=all&name=Cat%20Panel';
-const CAT_REPO = 'https://github.com/mazodimobinhost-creator/cat-client';
+const CAT_REPO = 'https://github.com/imsamiyar/brebde';
 const CAT_CODE_URLS = [
   'https://raw.githubusercontent.com/mazodimobinhost-creator/cat-client/main/app/src/main/assets/panels/catclient.worker.js',
   'https://raw.githubusercontent.com/mazodimobinhost-creator/cat-client/master/app/src/main/assets/panels/catclient.worker.js',
@@ -841,7 +841,7 @@ async function kvDelete(env, key) {
 }
 
 const DEFAULT_SETTINGS = {
-  title: 'Cat Panel',
+  title: 'Brebde Panel',
   panelPassword: '',
   panelUser: '',
   theme: 'violet',
@@ -1714,21 +1714,33 @@ async function resolveDnsOverDoh(query, env) {
  * Open the outbound TCP socket. Destinations behind Cloudflare cannot be
  * dialled from a Worker, so those (and refused dials) go through a proxy IP.
  */
+/* Sticky last-good proxy IP (per isolate). Remembering the proxy that dialed
+ * successfully last avoids re-trying dead proxies on every new connection —
+ * each failed attempt costs a subrequest against the free-tier 50/request cap. */
+const lastGoodProxy = globalThis.__catLastGoodProxy || (globalThis.__catLastGoodProxy = { key: '', ip: '' });
+
 async function dialTarget(host, port, env, settings, log) {
   const sockets = await loadSockets();
   if (!sockets) throw new Error('cloudflare:sockets unavailable');
-  const attempts = [];
   const targetIsCf = isCloudflareIp(host);
-  if (!targetIsCf) attempts.push({ hostname: host, port: port, via: 'direct' });
-  proxyIpList(env, settings).forEach((proxy) => {
+  const proxyEntries = proxyIpList(env, settings).map((proxy) => {
     const parsed = splitHostPort(proxy, port);
-    attempts.push({ hostname: parsed.hostname, port: parsed.port || port, via: 'proxy:' + proxy });
+    return { hostname: parsed.hostname, port: parsed.port || port, via: 'proxy:' + proxy, proxy: proxy };
   });
+  // Try the last-known-good proxy first.
+  if (lastGoodProxy.ip) {
+    const idx = proxyEntries.findIndex((e) => e.proxy === lastGoodProxy.ip);
+    if (idx > 0) proxyEntries.unshift(proxyEntries.splice(idx, 1)[0]);
+  }
+  const attempts = [];
+  if (!targetIsCf) attempts.push({ hostname: host, port: port, via: 'direct', proxy: null });
+  attempts.push(...proxyEntries);
   let lastError = null;
   for (const attempt of attempts) {
     try {
       const socket = sockets.connect({ hostname: attempt.hostname, port: attempt.port }, { allowHalfOpen: false });
       if (socket.opened) await socket.opened;
+      if (attempt.proxy) { lastGoodProxy.ip = attempt.proxy; lastGoodProxy.key = String(host) + ':' + port; }
       if (log) log('dial ok ' + attempt.via + ' → ' + attempt.hostname + ':' + attempt.port);
       return { socket: socket, via: attempt.via };
     } catch (e) {
@@ -1736,6 +1748,7 @@ async function dialTarget(host, port, env, settings, log) {
       if (log) log('dial failed ' + attempt.via + ': ' + (e && e.message ? e.message : e));
     }
   }
+  lastGoodProxy.ip = '';
   throw lastError || new Error('no route to ' + host + ':' + port);
 }
 
@@ -3027,7 +3040,7 @@ function buildConfigEntries(host, env, uuid, opts) {
 
 function buildSubLinks(host, env, uuid, opts, includeWarp) {
   const links = buildConfigEntries(host, env, uuid, opts).map((e) => e.link);
-  // `warp://` is a Cat Client extension; v2rayNG / v2box / Streisand reject unknown
+  // `warp://` is a Brebde extension; v2rayNG / v2box / Streisand reject unknown
   // schemes and may drop the whole subscription, so it is opt-in (?warp=1).
   if (includeWarp && String(env.ENABLE_WARP).toLowerCase() !== 'false') links.push('warp://#🐱 Cat WARP');
   return links;
@@ -3174,7 +3187,7 @@ function buildAllConfigs(host, env, uuid, opts) {
     groups[key].entries.push(entry);
   });
   return {
-    panel: 'cat-panel',
+    panel: 'brebde',
     version: CAT_PANEL_VERSION,
     host: host,
     sni: options.sni,
@@ -3984,7 +3997,7 @@ function css() {
 }
 
 /**
- * Panel themes. `violet` is the Cat Client signature (purple night) and the
+ * Panel themes. `violet` is the Brebde signature (purple night) and the
  * default; the others are one-tap alternatives for people who want a different
  * look on the same panel.
  */
@@ -4017,7 +4030,7 @@ function panelState(host, env, uuid, request, settings) {
   return {
     version: CAT_PANEL_VERSION,
     tokenTemplateUrl: CF_TOKEN_TEMPLATE_URL,
-    title: String(env.PANEL_TITLE || 'Cat Panel'),
+    title: String(env.PANEL_TITLE || 'Brebde Panel'),
     host: host,
     sni: effectiveSni(host, env),
     uuid: uuid,
@@ -4067,13 +4080,13 @@ function panelState(host, env, uuid, request, settings) {
     autoHeal: !!(settings && settings.configs && settings.configs.autoHeal),
     lastHealthAt: (settings && settings.configs && settings.configs.lastHealth && settings.configs.lastHealth.at) || 0,
     scanRanges: scanRanges(env),
-    deepLink: 'catclient://add-sub?url=' + encodeURIComponent('https://' + host + '/sub/' + uuid) + '&name=' + encodeURIComponent('Cat Panel'),
+    deepLink: 'brebde://add-sub?url=' + encodeURIComponent('https://' + host + '/sub/' + uuid) + '&name=' + encodeURIComponent('Brebde Panel'),
   };
 }
 
 /** "Add to app" buttons for a subscription URL (rendered server-side, refreshed client-side). */
 function appButtonsHtml(subUrl, title) {
-  return appDeepLinks(subUrl, title || 'Cat Panel')
+  return appDeepLinks(subUrl, title || 'Brebde Panel')
     .filter((a) => a.id !== 'catclient')
     .map((a) => '<a class="app" data-app="' + a.id + '" href="' + esc(a.href) + '"><b>' + esc(a.label) + '</b><span>افزودن خودکار</span></a>')
     .join('');
@@ -4245,18 +4258,18 @@ function homeTabHtml(state) {
     '<button class="btn tiny" data-copy-target="subUrlText">کپی</button>' +
     '<button class="btn ghost tiny" data-qr-target="subUrlText">QR</button></div>' +
     '<div class="row" style="margin-top:10px">' +
-    '<a class="btn" id="homeDeepLink" href="' + esc(state.deepLink) + '">🐱 افزودن به Cat Client</a>' +
+    '<a class="btn" id="homeDeepLink" href="' + esc(state.deepLink) + '">🐱 افزودن به Brebde</a>' +
     '<button class="btn ghost" id="downloadSub">دانلود فایل کانفیگ</button>' +
     '<button class="btn ghost" id="copyAllLinks">کپی همهٔ کانفیگ‌ها</button>' +
     '</div>' +
     '<div class="apps" id="homeApps">' + appButtonsHtml(state.subUrl, state.title) + '</div>' +
-    '<p class="muted" style="margin-top:8px">لینک شامل UUID توست — آن را فقط به کسانی بده که می‌خواهی وصل شوند. در Cat Client → سابسکریپشن → + → لینک را وارد کن؛ هر «بروزرسانی» آخرین آی‌پی‌ها و پورت‌های تنظیم‌شده در تب «کانفیگ‌ها» را می‌گیرد.</p>' +
+    '<p class="muted" style="margin-top:8px">لینک شامل UUID توست — آن را فقط به کسانی بده که می‌خواهی وصل شوند. در Brebde → سابسکریپشن → + → لینک را وارد کن؛ هر «بروزرسانی» آخرین آی‌پی‌ها و پورت‌های تنظیم‌شده در تب «کانفیگ‌ها» را می‌گیرد.</p>' +
     '</div>' +
 
     '<div class="card"><h2><span class="dot"></span><span data-i18n="stepsTitle">سه قدم تا اتصال</span></h2>' +
     '<div class="steps">' +
     '<div class="step">این صفحه یعنی Worker فعال است؛ لینک ساب را کپی کن.</div>' +
-    '<div class="step">در Cat Client (یا v2rayNG / Hiddify / Clash Meta) افزودن سابسکریپشن را بزن و لینک را بچسبان.</div>' +
+    '<div class="step">در Brebde (یا v2rayNG / Hiddify / Clash Meta) افزودن سابسکریپشن را بزن و لینک را بچسبان.</div>' +
     '<div class="step">اگر سرعت کم بود، از تب «اسکنر» آی‌پی تمیز نزدیک اپراتورت را پیدا کن و کانفیگ بساز.</div>' +
     '</div></div>' +
 
@@ -4365,7 +4378,7 @@ function configsTabHtml(state) {
     '<p>تونل این پنل با VLESS و Trojan روی WebSocket تست شده و سالم است. اگر کانفیگ وصل نمی‌شود، تقریباً همیشه مشکل <b>مسیر رسیدن به کلودفلر</b> است، نه خود پنل:</p>' +
     '<p>• دامنهٔ <code>workers.dev</code> در ایران روی SNI فیلتر است؛ کانفیگی که آدرسش خودِ ورکر باشد از خیلی اپراتورها بالا نمی‌آید. کانفیگ‌های <b>آی‌پی تمیز</b> (آدرس = IP، SNI/Host = دامنهٔ ورکر) را امتحان کن — این حالت برای شبکه‌های محدودشده طراحی شده است.<br>' +
     '• کانفیگ‌های <b>پورت 80 (بدون TLS)</b> اول لیست‌اند؛ چون SNI روی خط نمی‌رود، وقتی TLS اختلال دارد معمولاً سریع‌تر جواب می‌دهند.<br>' +
-    '• در اپ، گزینهٔ <b>Fragment</b> را روشن کن (طول 100-200، تأخیر 1-1، بسته tlshello) تا SNI تکه‌تکه ارسال شود؛ Cat Client / MahsaNG / v2rayNG این را دارند.<br>' +
+    '• در اپ، گزینهٔ <b>Fragment</b> را روشن کن (طول 100-200، تأخیر 1-1، بسته tlshello) تا SNI تکه‌تکه ارسال شود؛ Brebde / MahsaNG / v2rayNG این را دارند.<br>' +
     '• اگر یک دامنهٔ شخصی روی کلودفلر داری، آن را به‌عنوان Custom Domain به ورکر وصل کن و در فیلد SNI بنویس — پایدارترین راه است.<br>' +
     '• آی‌پی‌های تازه را از تب «اسکنر» بگیر (روی رنج‌ها اسکن می‌کند) و با «گذاشتن داخل کانفیگ‌ها» همین‌جا اعمال کن؛ پورت ۴۴۳ + SNI دامنهٔ ورکر.</p>' +
     '<div class="row"><button class="btn ghost tiny" id="cfgCopyFragmentHint">کپی تنظیم Fragment پیشنهادی</button><button class="btn ghost tiny" data-goto-tab="scanner">رفتن به اسکنر</button></div>' +
@@ -4383,7 +4396,7 @@ function configsTabHtml(state) {
     '<button class="btn tiny" data-copy-target="cfgSubUrl">کپی</button>' +
     '<button class="btn ghost tiny" data-qr-target="cfgSubUrl">QR</button></div>' +
     '<div class="row" style="margin-top:10px">' +
-    '<a class="btn" id="cfgDeepLink" href="' + esc(state.deepLink) + '">🐱 افزودن به Cat Client</a>' +
+    '<a class="btn" id="cfgDeepLink" href="' + esc(state.deepLink) + '">🐱 افزودن به Brebde</a>' +
     '<button class="btn ghost" id="downloadCfg">دانلود txt</button>' +
     '<button class="btn ghost" id="copyAllLinks">کپی همهٔ کانفیگ‌ها</button>' +
     '</div>' +
@@ -4416,7 +4429,7 @@ function configsTabHtml(state) {
     '<button class="btn" id="singleBuild">ساخت کانفیگ</button>' +
     '<button class="btn ghost tiny" id="singleCopy">کپی</button>' +
     '<button class="btn ghost tiny" id="singleQr">QR</button>' +
-    '<a class="btn ghost tiny" id="singleAdd" href="#">افزودن به Cat Client</a>' +
+    '<a class="btn ghost tiny" id="singleAdd" href="#">افزودن به Brebde</a>' +
     '<button class="btn ghost tiny" id="singleScan">اعمال در اسکنر اپ</button>' +
     '</div>' +
     '<pre id="singleOut" style="margin-top:10px">—</pre></div>' +
@@ -4580,7 +4593,7 @@ function dnsTabHtml(state) {
     '</div>' +
     '<div class="card"><h2><span class="dot"></span><span data-i18n="dnsUseTitle">چطور استفاده کنم؟</span></h2>' +
     '<div class="steps" id="dnsSteps">' +
-    '<div class="step">Cat Client → تنظیمات → DNS رمزنگاری‌شده → حالت سفارشی (DoH) و همین آدرس را وارد کن.</div>' +
+    '<div class="step">Brebde → تنظیمات → DNS رمزنگاری‌شده → حالت سفارشی (DoH) و همین آدرس را وارد کن.</div>' +
     '<div class="step">در مرورگر (Chrome یا Firefox): Settings → Privacy → Secure DNS → Custom → همین آدرس.</div>' +
     '<div class="step">در اندروید اگر برنامهٔ جدا می‌خواهی: Intra یا RethinkDNS را با همین آدرس DoH تنظیم کن (Private DNS اندروید فقط DoT است).</div>' +
     '<div class="step">در Mihomo/Clash: بخش dns → nameserver → همین آدرس (کانفیگ /clash از قبل تنظیم شده است).</div>' +
@@ -4675,11 +4688,11 @@ function helpTabHtml(state) {
   return '<section class="tab" data-tab-panel="help">' + sectionHead('📖', 'راهنما', 'نصب، اتصال و رفع اشکال') +
     '<div class="card"><h2><span class="dot"></span><span data-i18n="helpTitle">راهنمای پنل</span></h2>' +
     '<div class="steps">' +
-    '<div class="step"><b>راه سریع (ویزارد):</b> <a href="' + esc(CF_TOKEN_TEMPLATE_URL) + '" target="_blank" rel="noopener">این لینک</a> صفحهٔ API Token کلودفلر را با دسترسی‌های آماده باز می‌کند → Continue to summary → Create Token → توکن را در اپ Cat Client (تب Cloud) یا در Cat Wizard بچسبان؛ پنل + KV + رمز خودکار ساخته می‌شود.</div>' +
+    '<div class="step"><b>راه سریع (ویزارد):</b> <a href="' + esc(CF_TOKEN_TEMPLATE_URL) + '" target="_blank" rel="noopener">این لینک</a> صفحهٔ API Token کلودفلر را با دسترسی‌های آماده باز می‌کند → Continue to summary → Create Token → توکن را در اپ Brebde (تب Cloud) یا در Cat Wizard بچسبان؛ پنل + KV + رمز خودکار ساخته می‌شود.</div>' +
     '<div class="step"><b>راه دستی:</b> Cloudflare → Workers &amp; Pages → Create Worker → کد را کامل جای‌گذاری کن → Deploy.</div>' +
     '<div class="step">Settings → Variables &amp; Secrets → هر متغیری که لازم داری اضافه کن (جدول پایین).</div>' +
     '<div class="step">آدرس Worker را باز کن؛ همین پنل بالا می‌آید. برای قفل‌کردن، PANEL_PASSWORD بگذار و آدرس را با <code>?p=رمز</code> باز کن.</div>' +
-    '<div class="step">لینک ساب را در Cat Client وارد کن و اتصال را تست کن.</div>' +
+    '<div class="step">لینک ساب را در Brebde وارد کن و اتصال را تست کن.</div>' +
     '</div>' +
     '<div class="row" style="margin-top:12px">' +
     '<button class="btn" id="copyCode">📥 کپی کد کامل پنل</button>' +
@@ -4694,9 +4707,9 @@ function helpTabHtml(state) {
     '<details><summary>کلاینت وصل نمی‌شود ولی پنل باز است؟</summary><p>مسیر یا UUID را تغییر داده‌ای؟ بعد از تغییر متغیرها، ساب را در اپ دوباره بروزرسانی کن. اگر <code>REMOTE</code> را فعال کرده‌ای باید رلهٔ wss درست باشد، وگرنه آن را خالی بگذار (حالت پیش‌فرض).</p></details>' +
     '<details><summary>آیا اتصال امن است؟</summary><p>پنل و کانفیگ‌ها روی حساب کلودفلر خودت اجرا می‌شوند؛ هیچ لاگی از ترافیک ذخیره نمی‌شود. برای امنیت بیشتر PANEL_PASSWORD بگذار و SNI_LIST را فقط دامنه‌های خودت نگه دار.</p></details>' +
     '<details><summary>روی اپراتور خاصی کار نمی‌کند؟</summary><p>آی‌پی دیگری از لیست اسکنر انتخاب کن یا SNI را به دامنهٔ سالم دیگری تغییر بده (SNI_LIST). بعضی اپراتورها بعضی آی‌پی‌ها را بسته‌اند.</p></details>' +
-    '<details><summary>چطور کانفیگ Warp بگیرم؟</summary><p>در لینک <code>/sub</code> یک آیتم <code>warp://</code> هست؛ در Cat Client مستقیم اضافه می‌شود. برای حذف، <code>ENABLE_WARP=false</code> بگذار.</p></details>' +
+    '<details><summary>چطور کانفیگ Warp بگیرم؟</summary><p>در لینک <code>/sub</code> یک آیتم <code>warp://</code> هست؛ در Brebde مستقیم اضافه می‌شود. برای حذف، <code>ENABLE_WARP=false</code> بگذار.</p></details>' +
     '</div>' +
-    '<div class="card"><p class="muted" dir="rtl">Cat Panel v' + CAT_PANEL_VERSION + ' · بدون لاگ · ساخته‌شده برای Cat Client · ' + esc(state.host) + '</p></div>' +
+    '<div class="card"><p class="muted" dir="rtl">Cat Panel v' + CAT_PANEL_VERSION + ' · بدون لاگ · ساخته‌شده برای Brebde · ' + esc(state.host) + '</p></div>' +
     '</section>';
 }
 
@@ -4797,7 +4810,7 @@ function panelClientJs() {
     'var cfgFmt="",cfgSavedInKv=false;',
     'function subUrlFor(fmt){var base="https://"+S.host+"/sub/"+S.uuid+(fmt||"");return cfgSavedInKv?base:base+subQuery(OPT);}',
     'function refreshSubUrl(){var u=subUrlFor(cfgFmt);$("#cfgSubUrl").textContent=u;$("#subUrlText").textContent=subUrlFor("");',
-    ' var deep="catclient://add-sub?url="+encodeURIComponent(subUrlFor(""))+"&name="+encodeURIComponent(S.title||"Cat Panel");$("#cfgDeepLink").setAttribute("href",deep);var d2=$("#homeDeepLink");if(d2)d2.setAttribute("href",deep);refreshApps(subUrlFor(""));}',
+    ' var deep="brebde://add-sub?url="+encodeURIComponent(subUrlFor(""))+"&name="+encodeURIComponent(S.title||"Cat Panel");$("#cfgDeepLink").setAttribute("href",deep);var d2=$("#homeDeepLink");if(d2)d2.setAttribute("href",deep);refreshApps(subUrlFor(""));}',
     'function appLinks(sub){var enc=encodeURIComponent(sub),tag=encodeURIComponent(S.title||"Cat Panel"),base=sub.replace(/\\/?$/,"");',
     ' return {v2rayng:"v2rayng://install-sub?url="+enc+"&name="+tag,v2box:"v2box://install-sub?url="+enc+"&name="+tag,hiddify:"hiddify://import/"+sub+"#"+tag,streisand:"streisand://import/"+sub,v2raytun:"v2raytun://import/"+sub,',
     '  singbox:"sing-box://import-remote-profile?url="+encodeURIComponent(base+"/singbox")+"#"+tag,clash:"clash://install-config?url="+encodeURIComponent(base+"/clash")+"&name="+tag,shadowrocket:"sub://"+btoa(sub)};}',
@@ -4826,7 +4839,7 @@ function panelClientJs() {
     'function msClass(ms){return ms===null?"":(ms<0?"bad":(ms<300?"good":(ms<700?"mid":"bad")))}',
     'function renderConfigs(){var q=($("#cfgSearch").value||"").toLowerCase();var rows=CFG.filter(function(c){return !q||c.name.toLowerCase().indexOf(q)>=0||c.addr.toLowerCase().indexOf(q)>=0});',
     ' var html=rows.map(function(c,i){var ms=c.ms===null?"—":(c.ms<0?"✗":c.ms+" ms");return "<tr><td>"+(i+1)+"</td><td>"+c.name+"</td><td dir=ltr>"+c.addr+"</td><td dir=ltr>"+c.port+(c.tls?"":" <span class=pill>http</span>")+"</td><td class=\\"ms "+msClass(c.ms)+"\\" data-cfg-ms=\\""+i+"\\">"+ms+"</td>"+',
-    ' "<td><button class=\\"btn tiny\\" data-copy=\\""+encodeURIComponent(c.link)+"\\">کپی</button> <button class=\\"btn ghost tiny\\" data-qr=\\""+encodeURIComponent(c.link)+"\\">QR</button> <a class=\\"btn ghost tiny\\" href=\\"catclient://add-sub?url="+encodeURIComponent(c.link)+"&name="+encodeURIComponent(c.name)+"\\">افزودن</a></td></tr>"}).join("");',
+    ' "<td><button class=\\"btn tiny\\" data-copy=\\""+encodeURIComponent(c.link)+"\\">کپی</button> <button class=\\"btn ghost tiny\\" data-qr=\\""+encodeURIComponent(c.link)+"\\">QR</button> <a class=\\"btn ghost tiny\\" href=\\"brebde://add-sub?url="+encodeURIComponent(c.link)+"&name="+encodeURIComponent(c.name)+"\\">افزودن</a></td></tr>"}).join("");',
     ' $("#cfgTable").innerHTML=html||"<tr><td colspan=6>موردی نیست</td></tr>";$("#cfgCountLabel").textContent=String(CFG.length);',
     ' $("#cfgAllText").textContent=CFG.map(function(c){return c.link}).join("\\n");',
     '}',
@@ -4922,8 +4935,8 @@ function panelClientJs() {
     '  return "vless://"+S.uuid+"@"+addr+":"+port+"?encryption=none&"+sec+"&type=ws&path="+encodeURIComponent(path)+"&host="+encodeURIComponent(hostHeader)+"#"+encodeURIComponent(name);}',
     ' return "trojan://"+encodeURIComponent(S.trojanPass)+"@"+addr+":"+port+"?"+sec+"&type=ws&path="+encodeURIComponent(path.indexOf("trojan")>=0?path:S.trojanPath)+"&host="+encodeURIComponent(hostHeader)+"#"+encodeURIComponent(name);}',
     '$("#singleBuild").addEventListener("click",function(){var link=buildSingle();if(!link)return;',
-    ' $("#singleOut").textContent=link;$("#singleAdd").setAttribute("href","catclient://add-sub?url="+encodeURIComponent(link)+"&name="+encodeURIComponent("Cat Single"));',
-    ' $("#singleScan").onclick=function(){location.href="catclient://scan?sni="+encodeURIComponent($("#singleSni").value||S.sni);};',
+    ' $("#singleOut").textContent=link;$("#singleAdd").setAttribute("href","brebde://add-sub?url="+encodeURIComponent(link)+"&name="+encodeURIComponent("Cat Single"));',
+    ' $("#singleScan").onclick=function(){location.href="brebde://scan?sni="+encodeURIComponent($("#singleSni").value||S.sni);};',
     ' copyText(link);});',
     '$("#singleCopy").addEventListener("click",function(){var link=$("#singleOut").textContent;if(!link||link==="—"){link=buildSingle();$("#singleOut").textContent=link;}copyText(link);});',
     '$("#singleQr").addEventListener("click",function(){var link=$("#singleOut").textContent;if(!link||link==="—"){link=buildSingle();$("#singleOut").textContent=link;}openQr(link);});',
@@ -4956,7 +4969,7 @@ function panelClientJs() {
     '  var tr=j.traffic||{};var mU=(tr.master&&tr.master.used)||0;tot+=mU;',
     '  if($("#uCount"))$("#uCount").textContent=USERS.length;if($("#uOnline"))$("#uOnline").textContent=j.online||0;if($("#uTotalUsed"))$("#uTotalUsed").textContent=fmtB(tot);if($("#uTodayUsed"))$("#uTodayUsed").textContent=fmtB((tr.today||0)+((tr.master&&tr.master.today)||0));',
     ' }).catch(function(){tb.innerHTML="<tr><td colspan=6>دریافت لیست ناموفق بود</td></tr>"});}',
-    'setInterval(function(){var a=$("#uAuto");if(a&&a.checked&&!document.hidden&&$("#userTable")&&document.querySelector(".tab.active[data-tab-panel=users]"))loadUsers(true)},20000);',
+    'setInterval(function(){var a=$("#uAuto");if(a&&a.checked&&!document.hidden&&$("#userTable")&&document.querySelector(".tab.active[data-tab-panel=users]"))loadUsers(true)},120000);',
     'function userPut(id,body){return fetch(S.usersApi+"/"+id,{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify(body)}).then(function(r){return r.json()});}',
     'document.addEventListener("click",function(ev){',
     ' var sub=ev.target.closest("[data-user-sub]");',
@@ -5184,7 +5197,7 @@ function panelClientJs() {
     '$("#buildFromIps").addEventListener("click",function(){var ips=selectedIps();if(!ips.length){toast("اول چند آی‌پی را انتخاب کن");return;}',
     ' var lines=[];ips.forEach(function(ip){var loc=locationForAddr(ip);OPT.ports.forEach(function(p){if(OPT.protocols.indexOf("vless")>=0)lines.push(vlessLink(ip,"🐱 Cat · "+loc.country+" · VLESS · "+p+" · "+loc.flag,OPT.sni,p));if(OPT.protocols.indexOf("trojan")>=0)lines.push(trojanLink(ip,"🐱 Cat · "+loc.country+" · Trojan · "+p+" · "+loc.flag,OPT.sni,p));})});',
     ' copyText(lines.join("\\n"));toast(lines.length+" کانفیگ کپی شد");',
-    ' if(confirm("این آی‌پی‌ها را به‌عنوان فرانتینگ در اپ Cat Client هم اعمال کنم؟")){location.href="catclient://scan?sni="+encodeURIComponent(S.host)+"&ip="+encodeURIComponent(ips.join(","));}});',
+    ' if(confirm("این آی‌پی‌ها را به‌عنوان فرانتینگ در اپ Brebde هم اعمال کنم؟")){location.href="brebde://scan?sni="+encodeURIComponent(S.host)+"&ip="+encodeURIComponent(ips.join(","));}});',
     '/* ---- Precise scanner (MLM method) — tab اسکنر دقیق ---- */',
     'var preciseResults=[],preciseAbort=null;',
     'function renderPrecise(){',
@@ -5867,9 +5880,9 @@ function subscriptionUserinfo(state) {
  */
 function appDeepLinks(sub, name) {
   const enc = encodeURIComponent(sub);
-  const tag = encodeURIComponent(name || 'Cat Panel');
+  const tag = encodeURIComponent(name || 'Brebde Panel');
   return [
-    { id: 'catclient', label: 'Cat Client', href: 'catclient://add-sub?url=' + enc + '&name=' + tag },
+    { id: 'catclient', label: 'Brebde', href: 'brebde://add-sub?url=' + enc + '&name=' + tag },
     { id: 'v2rayng', label: 'v2rayNG', href: 'v2rayng://install-sub?url=' + enc + '&name=' + tag },
     { id: 'v2box', label: 'V2Box', href: 'v2box://install-sub?url=' + enc + '&name=' + tag },
     { id: 'hiddify', label: 'Hiddify', href: 'hiddify://import/' + sub + '#' + tag },
@@ -5892,7 +5905,7 @@ function wantsHtmlPage(request) {
  * /sub/<uuid> in a browser: the clean-IP list (ping + country), add-to-app
  * buttons, QR and the raw formats. Client apps never see this (UA gate). */
 function masterSubHtml(opts) {
-  const title = String(opts.title || 'Cat Panel');
+  const title = String(opts.title || 'Brebde Panel');
   const subUrl = String(opts.subUrl || '');
   const enc = encodeURIComponent(subUrl);
   const entries = (opts.entries || []).slice().sort((a, b) => (a.ms || 9e9) - (b.ms || 9e9));
@@ -5946,7 +5959,7 @@ async function handleUserSubscription(request, url, env, host, path, ctx) {
   // Write diet: a force flush per visit is needless — buffered bytes already
   // count toward usage; persist at most every 30s (close still force-flushes).
   if (Date.now() - trafficState.lastFlush > 30000) await flushTraffic(env).catch(() => {});
-  const title = String(env.PANEL_TITLE || 'Cat Panel');
+  const title = String(env.PANEL_TITLE || 'Brebde Panel');
 
   if (url.searchParams.get('stats') === '1') {
     return jsonResponse(Object.assign({ ok: true, ts: Date.now() }, state), 200, Object.assign({ 'cache-control': 'no-store' }, CORS));
@@ -5965,8 +5978,16 @@ async function handleUserSubscription(request, url, env, host, path, ctx) {
     return Response.redirect('https://' + host + '/info/' + encodeURIComponent(user.token), 302);
   }
   const settings = await readSettings(env);
-  if (settings.configs && settings.configs.verifiedScanned !== true && ctx && typeof ctx.waitUntil === 'function') {
-    ctx.waitUntil(Promise.resolve(ensureVerifiedPool(env, host)).catch(() => {}));
+  // CPU saver: the heavy verified-pool probe runs ONLY from panel-authed
+  // requests, never from a client's automatic subscription refresh (clients
+  // re-pull /sub every few minutes — that used to trigger a server-side scan).
+  if (
+    settings.configs && settings.configs.verifiedScanned !== true &&
+    ctx && typeof ctx.waitUntil === 'function' &&
+    wantsHtmlPage(request) === false
+  ) {
+    const isOwner = await requirePanelAuth(request, env).then((r) => r.ok).catch(() => false);
+    if (isOwner) ctx.waitUntil(Promise.resolve(ensureVerifiedPool(env, host)).catch(() => {}));
   }
   const landingUrl = new URL(url.toString());
   landingUrl.searchParams.set('verified', '1');
@@ -6111,7 +6132,7 @@ function userInfoHtml(d) {
     '<div class="grid two" style="margin-top:12px"><label class="field"><span>تعداد کانفیگ</span><select id="configCount"><option value="3">۳ کانفیگ</option><option value="6">۶ کانفیگ</option><option value="10">۱۰ کانفیگ</option><option value="20">۲۰ کانفیگ</option><option value="40">۴۰ کانفیگ</option><option value="80">۸۰ کانفیگ</option><option value="100">۱۰۰ کانفیگ</option><option value="200" selected>همه (تا ۲۰۰)</option></select></label>' +
     '<div class="field"><span>کشورها</span><div class="country-choices" id="countryChoices">' + countryControls + '</div></div></div>' +
     '<div class="row" style="margin-top:12px"><button class="btn" id="loadRecipientConfigs">نمایش کانفیگ‌های انتخابی</button><span class="muted" id="recipientStatus"></span></div>' +
-    '<div class="link-row" style="margin-top:10px"><span class="grow mono" id="selectedSubUrl">' + esc(d.allUrl || d.subUrl) + '</span><button class="btn tiny" id="copySelectedSub">کپی لینک انتخابی</button><a class="btn ghost tiny" id="addSelectedSub" href="' + esc('catclient://add-sub?url=' + encodeURIComponent(d.subUrl) + '&name=' + encodeURIComponent(st.name)) + '">افزودن به Cat Client</a></div>' +
+    '<div class="link-row" style="margin-top:10px"><span class="grow mono" id="selectedSubUrl">' + esc(d.allUrl || d.subUrl) + '</span><button class="btn tiny" id="copySelectedSub">کپی لینک انتخابی</button><a class="btn ghost tiny" id="addSelectedSub" href="' + esc('brebde://add-sub?url=' + encodeURIComponent(d.subUrl) + '&name=' + encodeURIComponent(st.name)) + '">افزودن به Brebde</a></div>' +
     '<div id="recipientGroups" style="margin-top:14px"></div></section>') +
 
     '<div class="modal" id="qrModal"><div class="box"><img id="qrImg" alt="QR"><p class="mono" id="qrHint"></p><button class="btn" id="qrClose">بستن</button></div></div>' +
@@ -6123,8 +6144,8 @@ function userInfoHtml(d) {
     'function fallback(t){var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("کپی شد")}catch(e){}document.body.removeChild(ta)}' +
     'function escH(v){return String(v==null?"":v).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}' +
     'function selectedConfigUrl(){var count=Number($("#configCount").value||6);var countries=$$("#countryChoices [data-country]:checked").map(function(c){return c.getAttribute("data-country")});var u=D.allUrl+"&count="+encodeURIComponent(count);if(countries.length)u+="&countries="+encodeURIComponent(countries.join(","));return u;}' +
-    'function refreshSelectedLink(){var u=selectedConfigUrl();$("#selectedSubUrl").textContent=u;$("#addSelectedSub").setAttribute("href","catclient://add-sub?url="+encodeURIComponent(u)+"&name="+encodeURIComponent(D.name||"Cat Panel"));return u;}' +
-    'function renderRecipientEntries(entries){var groups={};(entries||[]).forEach(function(e){var key=e.countryCode||"EDGE";(groups[key]||(groups[key]={name:e.countryName||"Cloudflare edge",flag:e.flag||"🌐",entries:[]})).entries.push(e)});var keys=Object.keys(groups);$("#recipientGroups").innerHTML=keys.length?keys.map(function(k){var g=groups[k];return "<div class=\\"config-group\\"><h3>"+escH(g.flag+" "+g.name)+" <span class=pill>"+g.entries.length+"</span></h3><div class=\\"config-list\\">"+g.entries.map(function(e){return "<div class=\\"config-item\\"><div><b>"+escH(e.name)+"</b><small dir=ltr>"+escH(e.addr)+":"+escH(e.port)+"</small></div><div class=\\"row\\"><button class=\\"btn ghost tiny\\" data-copy-config=\\""+encodeURIComponent(e.link)+"\\">کپی</button><button class=\\"btn ghost tiny\\" data-qr-config=\\""+encodeURIComponent(e.link)+"\\">کپی</button><a class=\\"btn tiny\\" href=\\"catclient://add-sub?url="+encodeURIComponent(e.link)+"&name="+encodeURIComponent(e.name)+"\\">افزودن</a></div></div>"}).join("")+"</div></div>"}).join(""):"<p class=muted>برای انتخاب فعلی، IP موفقی پیدا نشد. کشور دیگری یا تعداد بیشتری انتخاب کن.</p>";}' +
+    'function refreshSelectedLink(){var u=selectedConfigUrl();$("#selectedSubUrl").textContent=u;$("#addSelectedSub").setAttribute("href","brebde://add-sub?url="+encodeURIComponent(u)+"&name="+encodeURIComponent(D.name||"Cat Panel"));return u;}' +
+    'function renderRecipientEntries(entries){var groups={};(entries||[]).forEach(function(e){var key=e.countryCode||"EDGE";(groups[key]||(groups[key]={name:e.countryName||"Cloudflare edge",flag:e.flag||"🌐",entries:[]})).entries.push(e)});var keys=Object.keys(groups);$("#recipientGroups").innerHTML=keys.length?keys.map(function(k){var g=groups[k];return "<div class=\\"config-group\\"><h3>"+escH(g.flag+" "+g.name)+" <span class=pill>"+g.entries.length+"</span></h3><div class=\\"config-list\\">"+g.entries.map(function(e){return "<div class=\\"config-item\\"><div><b>"+escH(e.name)+"</b><small dir=ltr>"+escH(e.addr)+":"+escH(e.port)+"</small></div><div class=\\"row\\"><button class=\\"btn ghost tiny\\" data-copy-config=\\""+encodeURIComponent(e.link)+"\\">کپی</button><button class=\\"btn ghost tiny\\" data-qr-config=\\""+encodeURIComponent(e.link)+"\\">کپی</button><a class=\\"btn tiny\\" href=\\"brebde://add-sub?url="+encodeURIComponent(e.link)+"&name="+encodeURIComponent(e.name)+"\\">افزودن</a></div></div>"}).join("")+"</div></div>"}).join(""):"<p class=muted>برای انتخاب فعلی، IP موفقی پیدا نشد. کشور دیگری یا تعداد بیشتری انتخاب کن.</p>";}' +
     'function loadRecipientConfigs(){var u=refreshSelectedLink();$("#recipientStatus").textContent="در حال ساخت…";fetch(u,{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(!j||!j.ok)throw new Error("failed");renderRecipientEntries(j.entries||[]);$("#recipientStatus").textContent=(j.entries||[]).length+" کانفیگ موفق";}).catch(function(){$("#recipientStatus").textContent="ساخت لینک ناموفق بود";});}' +
     'document.addEventListener("click",function(ev){var c=ev.target.closest("[data-copy-config]");if(c){copy(decodeURIComponent(c.getAttribute("data-copy-config")));}var q=ev.target.closest("[data-qr-config]");if(q){var u=decodeURIComponent(q.getAttribute("data-qr-config"));$("#qrImg").src="/qr.svg?d="+encodeURIComponent(u)+"&size=8";$("#qrHint").textContent=u;$("#qrModal").classList.add("show");}});' +
     '$("#configCount").addEventListener("change",loadRecipientConfigs);$("#countryChoices").addEventListener("change",loadRecipientConfigs);$("#copySelectedSub").onclick=function(){copy(refreshSelectedLink())};$("#loadRecipientConfigs").onclick=loadRecipientConfigs;renderRecipientEntries(D.entries||[]);loadRecipientConfigs();if(!D.verifiedScanned){try{if(!sessionStorage.getItem("catinfo_r")){sessionStorage.setItem("catinfo_r","1");setTimeout(function(){location.reload()},12000)}}catch(e){}}' +
@@ -6138,7 +6159,7 @@ function userInfoHtml(d) {
     ' var st=$("#statusTag");st.className="pill "+(s.status==="active"?"ok":"warn");st.textContent=s.status==="active"?"فعال":(s.status==="expired"?"منقضی":(s.status==="quota-exceeded"?"حجم تمام شده":"غیرفعال"));}' +
     'setTimeout(function(){$("#ringArc").style.strokeDashoffset=String(314.16-314.16*Math.min(100,' + (st.total > 0 ? st.pct : 0) + ')/100)},80);' +
     'function poll(){fetch(D.subUrl+"?stats=1",{cache:"no-store"}).then(function(r){return r.json()}).then(apply).catch(function(){})}' +
-    'setInterval(poll,20000);document.addEventListener("visibilitychange",function(){if(!document.hidden)poll()});' +
+    'setInterval(poll,300000);document.addEventListener("visibilitychange",function(){if(!document.hidden)poll()});' +
     '})();</script></body></html>';
 }
 
@@ -6176,12 +6197,41 @@ async function handlePanelRequest(request, url, env, host, uuid, state) {
         status: 200,
         headers: {
           'content-type': 'text/html; charset=utf-8',
+          'cache-control': 'no-store',
           'set-cookie': AUTH_COOKIE + '=' + expected + '; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax',
         },
       });
     }
   }
-  return htmlResponse(panelShell(state));
+  // Panel shell IS cached at the edge (60s): the shell HTML is expensive to
+  // build on every refresh and its JS pulls live state via /api/* anyway.
+  // Authenticated-with-?p= logins bypass the cache so the Set-Cookie works.
+  if (panelPass && supplied && supplied === panelPass) {
+    return new Response(panelShell(state), {
+      status: 200,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+        'set-cookie': AUTH_COOKIE + '=' + expected + '; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax',
+      },
+    });
+  }
+  const cached = caches.default;
+  const cacheKey = new Request('https://brebde-cache.internal/panel/' + encodeURIComponent(state.title || '') + '/' + (uuid || '').slice(0, 8), request);
+  const hit = await cached.match(cacheKey);
+  if (hit) return hit;
+  const body = panelShell(state);
+  const resp = new Response(body, {
+    status: 200,
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=60' },
+  });
+  ctx2put(cacheKey, resp.clone());
+  return resp;
+}
+
+/** Edge-cache put that never throws and ignores opaque/streamed bodies. */
+async function ctx2put(key, resp) {
+  try { await caches.default.put(key, resp); } catch (e) { /* ignore */ }
 }
 
 async function fetchHandler(request, env, ctx) {
@@ -6193,7 +6243,7 @@ async function fetchHandler(request, env, ctx) {
   if (url.pathname === '/api/health') {
     let kvOk = false;
     try { kvOk = hasKv(env); } catch (e) { kvOk = false; }
-    return jsonResponse({ ok: true, panel: 'cat-panel', version: CAT_PANEL_VERSION, kv: kvOk, ts: Date.now() }, 200, Object.assign({ 'cache-control': 'no-store' }, CORS));
+    return jsonResponse({ ok: true, panel: 'brebde', version: CAT_PANEL_VERSION, kv: kvOk, ts: Date.now() }, 200, Object.assign({ 'cache-control': 'no-store' }, CORS));
   }
   if (url.pathname === '/api/last-crash') {
     return jsonResponse({ ok: true, crashes: await readCrashes(env) }, 200, Object.assign({ 'cache-control': 'no-store' }, CORS));
@@ -6264,10 +6314,10 @@ async function fetchHandler(request, env, ctx) {
       const stats = (options.entryLimit || DEFAULT_SUB_ENTRIES) + ' کانفیگ فعال · ' + options.protocols.join(' + ').toUpperCase() +
         (op ? ' · اپراتور ' + op.fa : '');
       return new Response(masterSubHtml({
-        title: String(env.PANEL_TITLE || 'Cat Panel'),
+        title: String(env.PANEL_TITLE || 'Brebde Panel'),
         subUrl: 'https://' + host + path,
         entries: options.verifiedEntries,
-        apps: appDeepLinks('https://' + host + path, String(env.PANEL_TITLE || 'Cat Panel')),
+        apps: appDeepLinks('https://' + host + path, String(env.PANEL_TITLE || 'Brebde Panel')),
         stats: stats,
       }), { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
     }
@@ -6276,7 +6326,7 @@ async function fetchHandler(request, env, ctx) {
     if (kind === 'all') format = 'all';
     if (kind === 'sub64' || url.searchParams.get('b64') === '1') format = format || 'b64';
     const usage = subUserInfoHeader(env);
-    const headers = Object.assign({ 'subscription-userinfo': usage, 'profile-update-interval': '6', 'profile-title': 'base64:' + b64encode(String(env.PANEL_TITLE || 'Cat Panel')) }, CORS);
+    const headers = Object.assign({ 'subscription-userinfo': usage, 'profile-update-interval': '6', 'profile-title': 'base64:' + b64encode(String(env.PANEL_TITLE || 'Brebde Panel')) }, CORS);
     if (format === 'clash') {
       return new Response(buildClashYaml(host, env, subUuid, options), {
         headers: Object.assign({ 'content-type': 'text/yaml; charset=utf-8' }, headers),
@@ -6364,7 +6414,7 @@ async function fetchHandler(request, env, ctx) {
   if (path === '/api/version') {
     return jsonResponse({
       ok: true,
-      panel: 'cat-panel',
+      panel: 'brebde',
       version: CAT_PANEL_VERSION,
       kv: hasKv(env),
       features: ['vless-ws', 'trojan-ws', 'tcp-relay', 'proxy-ip', 'users', 'quota', 'dns', 'scan', 'qr', 'subs', 'backup'],
@@ -6382,7 +6432,7 @@ async function fetchHandler(request, env, ctx) {
       asn: cf.asn || null,
       tlsVersion: cf.tlsVersion || null,
       httpProtocol: cf.httpProtocol || null,
-      panel: 'cat-panel',
+      panel: 'brebde',
       version: CAT_PANEL_VERSION,
     }, 200, CORS);
   }
@@ -6490,7 +6540,7 @@ async function fetchHandler(request, env, ctx) {
     const timeout = Math.max(1000, Math.min(8000, Number(url.searchParams.get('timeout') || 4000)));
     const concurrency = Math.max(1, Math.min(32, Number(url.searchParams.get('concurrency') || 16)));
     // Precise (MLM) mode: shots>1 = repeated warm samples per IP → min RTT + jitter.
-    const shots = Math.max(1, Math.min(5, Number(url.searchParams.get('shots') || 1)));
+    const shots = Math.max(1, Math.min(2, Number(url.searchParams.get('shots') || 1))); // capped at 2 for free-plan subrequest limit (was 5)
     const requestedSnis = splitCsv(url.searchParams.get('snis')).map((s) => s.trim().toLowerCase())
       .filter((s) => s && validAddress(s) && !isIpLiteral(s) && s !== String(host).toLowerCase())
       .slice(0, 3);
@@ -6716,7 +6766,7 @@ async function fetchHandler(request, env, ctx) {
     const cf = request.cf || {};
     return jsonResponse({
       ok: true,
-      panel: 'cat-panel',
+      panel: 'brebde',
       version: CAT_PANEL_VERSION,
       sni: effectiveSni(host, env),
       uuid: String(env.UUID || '').trim() ? 'explicit' : 'derived',

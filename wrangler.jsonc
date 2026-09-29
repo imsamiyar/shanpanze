@@ -3,17 +3,17 @@
 // anyone can deploy their own panel on their own account in one click,
 // no app required. KV is auto-provisioned and bound as CAT_KV.
 {
-  "name": "cat-panel",
+  "name": "brebde",
   "main": "app/src/main/assets/panels/catclient.worker.js",
   "compatibility_date": "2026-09-01",
   "workers_dev": true,
   "kv_namespaces": [
-    { "binding": "CAT_KV", "name": "cat-panel-kv" }
+    { "binding": "CAT_KV", "name": "brebde-kv" }
   ],
   "triggers": {
-    // Every 30 minutes: probe active IPs, prune the dead, refill with a
-    // diverse pool (same-country replacement preserved). Free plan allows it.
-    "crons": ["*/30 * * * *"]
+    // Every 6 hours: probe active IPs, prune the dead, refill with a
+    // diverse pool. (30 min was burning free-tier CPU + subrequest quota.)
+    "crons": ["0 */6 * * *"]
   },
   "vars": {
     // Fresh installs start open; set a panel password in Tools → settings.

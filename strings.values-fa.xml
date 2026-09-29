@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="widget_description">اتصال یا قطع اتصال Cat Client از صفحهٔ اصلی</string>
+    <string name="widget_description">اتصال یا قطع اتصال Brebde از صفحهٔ اصلی</string>
     <string name="widget_connect">اتصال</string>
     <string name="widget_disconnected">قطع اتصال</string>
-    <string name="widget_open_app">باز کردن Cat Client</string>
-    <string name="app_name">Cat Client</string>
+    <string name="widget_open_app">باز کردن Brebde</string>
+    <string name="app_name">Brebde</string>
     <string name="notification_channel_vpn">اتصال VPN</string>
-    <string name="notification_title">Cat Client</string>
+    <string name="notification_title">Brebde</string>
     <string name="notification_starting">در حال اتصال</string>
     <string name="notification_connected">متصل</string>
     <string name="notification_connected_public">متصل با سرورهای عمومی</string>
     <string name="notification_connected_traffic">%1$s · ↓ %2$s · ↑ %3$s</string>
     <string name="notification_action_disconnect">قطع اتصال</string>
     <string name="notification_action_reconnect">اتصال دوباره</string>
-    <string name="footer_copyright">کپی‌رایت Cat Client</string>
+    <string name="footer_copyright">کپی‌رایت Brebde</string>
     <string name="footer_url">https://t.me/catclient</string>
-    <string name="footer_telegram_content_description">باز کردن کانال Cat Client در تلگرام</string>
+    <string name="footer_telegram_content_description">باز کردن کانال Brebde در تلگرام</string>
     <string name="privacy_policy_title">سیاست حریم خصوصی</string>
-    <string name="privacy_policy_message">Cat Client یک سرویس VPN رایگان است که هنگام اتصال، ترافیک دستگاه شما را از سرورهای VPN عبور می‌دهد.\n\n• این برنامه اطلاعات حساب از شما درخواست نمی‌کند.\n• برنامه ممکن است اطلاعات فنی لازم برای برقراری VPN، مانند وضعیت اتصال، میزان مصرف، گزارش‌های عیب‌یابی و خطاهای سرویس را پردازش کند.\n• شمارنده‌های مصرف فقط روی دستگاه شما ذخیره می‌شوند.\n• ارائه‌دهندگان شبکه ممکن است فرادادهٔ لازم برای انتقال ترافیک اینترنت را پردازش کنند.\n• مسئولیت نحوهٔ استفاده از این سرویس با شماست و Cat Client مسئول فعالیت غیرقانونی انجام‌شده از طریق سرویس نیست.\n• از سرویس برای فعالیت غیرقانونی استفاده نکنید. دسترسی، سرعت و حفاظت‌های حریم خصوصی بدون ضمانت ارائه می‌شوند.</string>
+    <string name="privacy_policy_message">Brebde یک سرویس VPN رایگان است که هنگام اتصال، ترافیک دستگاه شما را از سرورهای VPN عبور می‌دهد.\n\n• این برنامه اطلاعات حساب از شما درخواست نمی‌کند.\n• برنامه ممکن است اطلاعات فنی لازم برای برقراری VPN، مانند وضعیت اتصال، میزان مصرف، گزارش‌های عیب‌یابی و خطاهای سرویس را پردازش کند.\n• شمارنده‌های مصرف فقط روی دستگاه شما ذخیره می‌شوند.\n• ارائه‌دهندگان شبکه ممکن است فرادادهٔ لازم برای انتقال ترافیک اینترنت را پردازش کنند.\n• مسئولیت نحوهٔ استفاده از این سرویس با شماست و Brebde مسئول فعالیت غیرقانونی انجام‌شده از طریق سرویس نیست.\n• از سرویس برای فعالیت غیرقانونی استفاده نکنید. دسترسی، سرعت و حفاظت‌های حریم خصوصی بدون ضمانت ارائه می‌شوند.</string>
     <string name="privacy_policy_checkbox">خواندم و موافقم</string>
     <string name="privacy_policy_accept">پذیرفتن</string>
     <string name="privacy_policy_not_now">فعلاً نه</string>
@@ -42,7 +42,7 @@
     <string name="language_persian">فارسی</string>
     <string name="language_section">زبان</string>
     <string name="language_setting_title">زبان برنامه</string>
-    <string name="language_setting_detail">زبان مورد استفاده در همه بخش‌های Cat Client را انتخاب کنید.</string>
+    <string name="language_setting_detail">زبان مورد استفاده در همه بخش‌های Brebde را انتخاب کنید.</string>
     <string name="theme_dialog_title">پوسته</string>
     <string name="theme_system">مطابق دستگاه</string>
     <string name="theme_light">روشن</string>
@@ -60,8 +60,8 @@
     <string name="subscription_from_clipboard">از کلیپ‌بورد</string>
     <string name="subscription_clipboard_empty">کلیپ‌بورد حاوی سابسکریپشن یا کانفیگ نیست.</string>
     <string name="subscription_builtin_detail">داخلی · %1$s</string>
-    <string name="subscription_private_name">Cat Client اختصاصی</string>
-    <string name="subscription_public_name">Cat Client عمومی</string>
+    <string name="subscription_private_name">Brebde اختصاصی</string>
+    <string name="subscription_public_name">Brebde عمومی</string>
     <string name="subscription_usage_traffic">مصرف %1$s از %2$s (٪%3$d)</string>
     <string name="subscription_usage_used_only">مصرف %1$s</string>
     <string name="subscription_usage_expiry">%1$d روز باقی‌مانده</string>
@@ -112,7 +112,7 @@
 
     <string name="version_label">نسخه %1$s</string>
     <string name="update_available_title">نسخه جدید آماده است</string>
-    <string name="update_available_message">نسخه %1$s Cat Client در گیت‌هاب منتشر شده است.</string>
+    <string name="update_available_message">نسخه %1$s Brebde در گیت‌هاب منتشر شده است.</string>
     <string name="update_view_release">مشاهده در گیت‌هاب</string>
     <string name="update_settings_title">به‌روزرسانی برنامه</string>
     <string name="update_badge">جدید</string>
@@ -135,7 +135,7 @@
     <string name="update_cancel_download">لغو دانلود</string>
     <string name="update_retry">دانلود دوباره</string>
     <string name="update_install">نصب نسخه جدید</string>
-    <string name="update_permission_denied">در تنظیمات اندروید، اجازه نصب را به Cat Client بدهید و سپس «نصب نسخه جدید» را بزنید.</string>
+    <string name="update_permission_denied">در تنظیمات اندروید، اجازه نصب را به Brebde بدهید و سپس «نصب نسخه جدید» را بزنید.</string>
     <string name="update_install_failed">صفحه نصب باز نشد. تنظیمات نصب در اندروید را بررسی کنید و دوباره تلاش کنید.</string>
     <string name="output_automatic">🌐  خروجی خودکار</string>
     <string name="metric_connection_time">زمان اتصال</string>
@@ -204,7 +204,7 @@
     <string name="location_content_description">موقعیت: %1$s</string>
 
     <string name="settings_title">تنظیمات</string>
-    <string name="settings_categories_description">برای پیکربندی Cat Client یک دسته را انتخاب کنید.</string>
+    <string name="settings_categories_description">برای پیکربندی Brebde یک دسته را انتخاب کنید.</string>
     <string name="settings_category_app_preferences">تنظیمات برنامه</string>
     <string name="settings_category_app_preferences_detail">سابسکریپشن، پوسته و زبان برنامه.</string>
     <string name="settings_subscription_title">سابسکریپشن</string>
@@ -241,7 +241,7 @@
     <string name="tls_integrity_title">یکپارچگی TLS</string>
     <string name="tls_integrity_description">سایت‌های امن را بررسی می‌کند و مسیرهای دارای گواهی نامعتبر را مسدود می‌کند.</string>
     <string name="tls_fragment_title">فرگمنت TLS (ByeDPI)</string>
-    <string name="tls_fragment_description">ClientHello را تکه‌تکه می‌فرستد تا فیلترینگ نتواند SNI را بخواند — حالت Fragment اختصاصی Cat Client برای دامنه‌های فیلترشدهٔ workers.dev. اگر سرعت افت کرد خاموشش کن.</string>
+    <string name="tls_fragment_description">ClientHello را تکه‌تکه می‌فرستد تا فیلترینگ نتواند SNI را بخواند — حالت Fragment اختصاصی Brebde برای دامنه‌های فیلترشدهٔ workers.dev. اگر سرعت افت کرد خاموشش کن.</string>
     <string name="tls_fragment_enabled_toast">فرگمنت TLS روشن شد — اتصال دوباره</string>
     <string name="dpi_preset_section">پریست فرگمنت بر اساس اپراتور</string>
     <string name="dpi_preset_applied">پریست %1$s ذخیره شد — برای اعمال، اتصال را دوباره برقرار کن</string>
@@ -316,7 +316,7 @@
     <string name="connection_mode_vpn">وی‌پی‌ان</string>
     <string name="connection_mode_proxy">پروکسی</string>
     <string name="lan_sharing_title">اشتراک وی‌پی‌ان در شبکه</string>
-    <string name="lan_sharing_description">دستگاه‌های دیگر با پروکسی HTTP یا SOCKS5 از Cat Client استفاده کنند.</string>
+    <string name="lan_sharing_description">دستگاه‌های دیگر با پروکسی HTTP یا SOCKS5 از Brebde استفاده کنند.</string>
     <string name="lan_sharing_require_password">نیاز به رمز عبور</string>
     <string name="lan_sharing_require_password_description">دسترسی را با نام کاربری و رمز ساخته‌شده محافظت کنید.</string>
     <string name="lan_sharing_manual_setup">پروکسی را روی هر دستگاه دستی تنظیم کنید. جداسازی کاربران وای‌فای یا برنامه‌هایی که پروکسی را نادیده می‌گیرند ممکن است مانع اتصال شود.</string>
@@ -431,11 +431,11 @@
     <string name="connection_chain_error_shared_proxy">«اتصال» و «بعد» از یک پراکسی زیرساختی مشترک استفاده می‌کنند و زنجیره نمی‌شوند. یکی را تغییر دهید.</string>
     <string name="connection_chain_error_udp">«بعد» به UDP نیاز دارد، اما «اتصال» فقط TCP را پشتیبانی می‌کند. یک «اتصال» با پشتیبانی UDP انتخاب کنید.</string>
 
-    <string name="diagnostics_empty">گزارش عیب‌یابی Cat Client خالی است.</string>
+    <string name="diagnostics_empty">گزارش عیب‌یابی Brebde خالی است.</string>
     <string name="diagnostics_copied">گزارش عیب‌یابی کپی شد.</string>
     <string name="chevron_forward">‹</string>
 
-    <!-- Cat Client feature strings (Persian) -->
+    <!-- Brebde feature strings (Persian) -->
     <string name="tab_free">رایگان</string>
     <string name="tab_scanner">اسکنر IP</string>
     <string name="tab_cloud">کلود</string>
@@ -485,7 +485,7 @@
     <string name="free_add_all">وارد کردن همه</string>
 
     <string name="cf_title">نصب Worker روی کلادفلر</string>
-    <string name="cf_intro">توکن API کلادفلر خود را وارد کنید (با دسترسی ویرایش Workers). Cat Client برای شما یک پنل شخصی روی Worker می‌سازد و سابسکریپشنش را به برنامه اضافه می‌کند.</string>
+    <string name="cf_intro">توکن API کلادفلر خود را وارد کنید (با دسترسی ویرایش Workers). Brebde برای شما یک پنل شخصی روی Worker می‌سازد و سابسکریپشنش را به برنامه اضافه می‌کند.</string>
     <string name="cf_howto_title">چطور توکن بسازیم</string>
     <string name="cf_howto_body">۱. وارد dash.cloudflare.com شوید → My Profile → API Tokens\n۲. Create Token → قالب \"Edit Cloudflare Workers\" را انتخاب کنید\n۳. Continue → Create Token → توکن را کپی کنید\n۴. اینجا جای‌گذاری کنید و روی Deploy بزنید.</string>
     <string name="cf_token_hint">توکن API کلادفلر</string>
@@ -678,7 +678,7 @@
     <string name="cloud_wizard_share_hint">این لینک را به دوستانت بده. هرکس با توکن خودش پنل خودش را نصب می‌کند؛ توکن هیچ‌جا ذخیره نمی‌شود.</string>
 
     <!-- Diagnostics and update safety -->
-    <string name="update_security_note">فقط ریلیز رسمی Cat Client · SHA-256، پکیج، ABI و گواهی امضا قبل از نصب بررسی می‌شوند.</string>
+    <string name="update_security_note">فقط ریلیز رسمی Brebde · SHA-256، پکیج، ABI و گواهی امضا قبل از نصب بررسی می‌شوند.</string>
     <string name="diagnostics_section">گزارش عیب‌یابی و پشتیبانی</string>
     <string name="diagnostics_description">گزارش کوتاه محلی از شروع برنامه و اتصال‌ها نگه می‌دارد. قبل از کپی یا اشتراک‌گذاری، رمزها حذف می‌شوند.</string>
     <string name="diagnostics_copy">کپی گزارش عیب‌یابی</string>
