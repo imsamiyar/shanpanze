@@ -4,7 +4,7 @@
 // no app required. KV is auto-provisioned and bound as CAT_KV.
 {
   "name": "brebde",
-  "main": "app/src/main/assets/panels/catclient.worker.js",
+  "main": "catclient.worker.js",
   "compatibility_date": "2026-09-01",
   "workers_dev": true,
   "kv_namespaces": [
